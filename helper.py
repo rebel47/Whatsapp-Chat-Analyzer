@@ -21,9 +21,33 @@ def fetch_stats(selected_user, df):
     
     return stats
 
-def fetch_most_busy_user(df):
+def fetch_most_busy_user(df, top_n=8):
+    """Get user message stats with improved grouping for large groups"""
     user_stats = df[df['user'] != 'group_notification']['user'].value_counts()
-    return pd.DataFrame({'user': user_stats.index, 'count': user_stats.values})
+    
+    # If more than top_n users, group the rest as "Others"
+    if len(user_stats) > top_n:
+        top_users = user_stats.head(top_n)
+        others_count = user_stats[top_n:].sum()
+        
+        # Create final DataFrame with "Others" category
+        user_data = pd.DataFrame({
+            'user': list(top_users.index) + ['Others'],
+            'count': list(top_users.values) + [others_count]
+        })
+        
+        # Calculate percentages
+        user_data['percentage'] = (user_data['count'] / user_data['count'].sum() * 100).round(1)
+        user_data['label'] = user_data.apply(lambda x: f"{x['user']}\n({x['percentage']}%)", axis=1)
+        
+        return user_data.sort_values('count', ascending=False)
+    
+    # For smaller groups, return all users
+    return pd.DataFrame({
+        'user': user_stats.index,
+        'count': user_stats.values,
+        'percentage': (user_stats.values / user_stats.sum() * 100).round(1)
+    }).assign(label=lambda x: x.apply(lambda r: f"{r['user']}\n({r['percentage']}%)", axis=1))
 
 def create_wordcloud(selected_user, df):
     if selected_user != 'Overall':
