@@ -87,8 +87,12 @@ def main():
                     if selected_user == 'Overall':
                         st.subheader("User Activity Distribution")
                         user_data = helper.fetch_most_busy_user(df)
-                        fig = px.pie(user_data, values='count', names='user',
-                                   title='Message Distribution by User')
+                        fig = px.pie(user_data, 
+                                    values='count', 
+                                    names='label',
+                                    title='Message Distribution by User',
+                                    hole=0.4)  # Makes it a donut chart
+                        fig.update_traces(textposition='inside', textinfo='percent')
                         st.plotly_chart(fig, use_container_width=True)
                 
                 render_timeline(helper.monthly_timeline(selected_user, df),
